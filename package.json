@@ -1,0 +1,16 @@
+{
+  "name": "howtotest",
+  "version": "1.0.0",
+  "description": "my first json package",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "aoherin",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.15.2",
+    "express-handlebars": "^3.0.0",
+    "request": "^2.81.0"
+  }
+}
