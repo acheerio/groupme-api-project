@@ -32,28 +32,26 @@ app.get('/about', function(req, res){
 });
 
 app.get('/2', function(req, res){
-	req.session.apiKey = req.query.access_token;	
+	req.session.apiKey = req.query.access_token || "";	
 	
 	if (req.session.apiKey == "")
 	{
-		res.render("2");
+		res.render("2_login");
 	}
 	else
-		res.render("3");
-	
-	res.render("2");
+	{
+		res.render("2_demo");
+	}
 });
 
-app.get('/3', function(req, res){
-	res.render("3");
-});
-
+/*
 app.get('/headers', function(req,res){
 	res.set('Content-Type','text/plain');
 	var s = '';
 	for(var name in req.headers) s += name + ': ' + req.headers[name] + '\n';
 	res.send(s);
 });
+*/
 
 app.get('/api', function(req, res){
 	if (req.query.q == "user")
