@@ -1,17 +1,24 @@
 var express = require('express');
+var handlebars = require("express-handlebars").create({defaultLayout: "main"});
+var session = require('express-session');
 var request = require('request');
+var bodyParser = require('body-parser');
+
+// express
 var app = express();
-var apiKey = "";
+
+// session
+app.use(session({secret: SESSION_SECRET}));
 
 // handlebars
-var handlebars = require("express-handlebars").create({defaultLayout: "main"});
-
 app.engine("handlebars", handlebars.engine);
 app.set("view engine", "handlebars");
 
-var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
+var API_KEY = "";
+var SESSION_SECRET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 app.set('port', process.env.PORT || 3000);
 
