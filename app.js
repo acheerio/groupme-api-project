@@ -7,8 +7,12 @@ var bodyParser = require('body-parser');
 // express
 var app = express();
 
-// session
-app.use(session({secret: SESSION_SECRET}));
+// express-session
+var SESSION_SECRET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+app.use(session({ 
+	secret: SESSION_SECRET,
+	resave: false,
+	saveUninitialized: true }));
 
 // handlebars
 app.engine("handlebars", handlebars.engine);
@@ -16,9 +20,6 @@ app.set("view engine", "handlebars");
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-
-var API_KEY = "";
-var SESSION_SECRET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 app.set('port', process.env.PORT || 3000);
 
@@ -31,12 +32,20 @@ app.get('/about', function(req, res){
 });
 
 app.get('/2', function(req, res){
+	req.session.apiKey = req.query.access_token;	
+	
+	if (req.session.apiKey == "")
+	{
+		res.render("2");
+	}
+	else
+		res.render("3");
+	
 	res.render("2");
 });
 
 app.get('/3', function(req, res){
 	res.render("3");
-	apiKey = req.query.access_token;
 });
 
 app.get('/headers', function(req,res){
@@ -50,7 +59,7 @@ app.get('/api', function(req, res){
 	if (req.query.q == "user")
 	{	
 		var userObj = null;
-		request.get({url: "https://api.groupme.com/v3/users/me?token=" + apiKey}, function(error, response, body)
+		request.get({url: "https://api.groupme.com/v3/users/me?token=" + req.session.apiKey}, function(error, response, body)
 			{
 				if (!error && response.statusCode >= 200 && response.statusCode < 400)
 				{
