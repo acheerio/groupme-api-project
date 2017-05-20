@@ -5,8 +5,13 @@ var apiKey = "";
 
 // handlebars
 var handlebars = require("express-handlebars").create({defaultLayout: "main"});
+
 app.engine("handlebars", handlebars.engine);
 app.set("view engine", "handlebars");
+
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 app.set('port', process.env.PORT || 3000);
 
@@ -18,12 +23,12 @@ app.get('/about', function(req, res){
 	res.render("about");
 });
 
-app.get('/page3', function(req, res){
-	res.render("page3");
+app.get('/2', function(req, res){
+	res.render("2");
 });
 
-app.get('/page4', function(req, res){
-	res.render("page4");
+app.get('/3', function(req, res){
+	res.render("3");
 	apiKey = req.query.access_token;
 });
 
