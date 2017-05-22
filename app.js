@@ -54,16 +54,22 @@ app.get('/2', function(req, res){
 			if (!error && response.statusCode >= 200 && response.statusCode < 400)
 			{
 				var userObj = JSON.parse(body).response;
+				
 				// save to session
-				req.session.img = userObj.image_url; // to show avatar
-				req.session.name = userObj.name; // to show personalized greeting
+				req.session.img = userObj.image_url;
+				req.session.name = userObj.name;
+				req.session.user_id = userObj.id;
+				req.session.email = userObj.email;
+				req.session.phone = userObj.phone_number;
+				req.session.lang = userObj.locale;
+				
 				// save to context
 				context.img = req.session.img + "." + IMG_SIZE;
 				context.name = req.session.name;
-				context.id = userObj.id;
-				context.email = userObj.email;
-				context.phone = userObj.phone_number;
-				context.lang = userObj.locale;
+				context.id = req.session.user_id;
+				context.email = req.session.email;
+				context.phone = req.session.phone;
+				context.lang = req.session.lang;
 				
 				// request group data
 				request.get({url: "https://api.groupme.com/v3/groups?token=" + req.session.apiKey}, function(error, response, body)
@@ -79,10 +85,13 @@ app.get('/2', function(req, res){
 								"name": groups[i]["name"],
 								"id": groups[i]["id"],
 								"privacy": groups[i]["type"],
-								"num_members": groups[i]["members"].length
+								"num_members": groups[i]["members"].length,
+								"get_messages": false
 							});
 						}
-						context.groups = myGroups;
+						
+						req.session.groups = myGroups;
+						context.groups = req.session.groups;
 						res.render("2_demo", context);
 					}
 					else
@@ -98,6 +107,93 @@ app.get('/2', function(req, res){
 				res.status(response.statusCode);
 			}
 		});
+	}
+});
+
+app.post('/2', function(req, res) {
+	var context = {};
+	var groupIndex = null;
+	
+	// profile info
+	context.img = req.session.img + "." + IMG_SIZE;
+	context.name = req.session.name;
+	context.id = req.session.user_id;
+	context.email = req.session.email;
+	context.phone = req.session.phone;
+	context.lang = req.session.lang;
+	
+	// group info
+	context.groups = req.session.groups;
+	
+	if (req.body["get_msgs"])
+	{
+		request.get({url: "https://api.groupme.com/v3/groups/" + req.body.group_id + "/messages?token=" + req.session.apiKey}, function(error, response, body)
+		{
+			if (!error && response.statusCode >= 200 && response.statusCode < 400)
+			{
+				// set getMessages to true
+				for (var i = 0; i < req.session.groups.length; i++)
+				{
+					if (req.session.groups[i]["id"] == req.body.group_id)
+					{
+						groupIndex = i;
+						req.session.groups[groupIndex]["get_messages"] = true;
+						context.groups[groupIndex]["get_messages"] = true;
+					}
+				}
+				
+				// TESTING
+				console.log("get_messages set to true");
+				
+				var msgArray = [];
+				var rawMsgs = JSON.parse(body).response.messages;
+				
+				// messages are returned in descending order (newest first) so pushing in reverse
+				for (var i = (rawMsgs.length - 1); i >= 0; i--)
+				{
+					msgArray.push({
+						"username": rawMsgs[i]["name"],
+						"text": rawMsgs[i]["text"],
+						"timestamp": rawMsgs[i]["created_at"]
+					});
+				}
+				
+				// TESTING - 
+				for (var i = 0; i < msgArray.length; i++)
+				{
+					console.log(msgArray[i]["username"], msgArray[i]["text"]);
+				}
+				
+				// message info
+				req.session.groups[groupIndex]["messages"] = msgArray;
+				context.groups[groupIndex]["messages"] = req.session.groups[groupIndex]["messages"];
+				
+				res.render("2_demo", context);
+			}
+			else
+			{
+				// error
+				res.status(response.statusCode);
+			}
+		});
+	}
+	
+	if (req.body["send_msg"])
+	{
+		request.post({
+			url: "https://api.groupme.com/v3/groups/" + req.body.group_id + "/messages?token=" + req.session.apiKey,
+			headers: {"Content-Type": "application/json"
+			body: '{}'}
+			}, function(error, response, body)
+			{
+				if (!error && response.statusCode >= 200 && response.statusCode < 400)
+				{
+				}
+				else
+				{
+				}
+			}
+		);
 	}
 });
 

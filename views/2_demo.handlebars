@@ -14,20 +14,46 @@
 <h2>My Groups</h2>
 <div id="group-info">
 	{{#each groups}}
-		<ul>
-			<img src = {{this.img}}>
-			<li> Name: {{this.name}}
-			<li> ID: {{this.id}}
-			<li> Type: {{this.privacy}}
-			<li> Number of Members: {{this.num_members}}
-		</ul>
+		<div>
+			<p>
+				<ul>
+					<img src = {{img}}>
+					<li> Name: {{name}}
+					<li> ID: {{id}}
+					<li> Type: {{privacy}}
+					<li> Number of Members: {{num_members}}
+				</ul>
+			</p>
+			<!-- To get recent messages -->
+			<p>
+			<form method="post">
+				<input type="hidden" name="group_id" value="{{id}}">
+				<input type="submit" name="get_msgs" value="Get Recent Messages">
+			</form>
+			</p>
+			<!--{{#if get_messages}}-->
+			<div>
+				{{#each messages}}
+					<p>{{username}}: {{text}}</p>
+				{{/each}}
+			</div>
+			<!--{{/if}}-->
+			<!-- To post a new message -->
+			<p>
+				<form method="post">
+					<input type="hidden" name="group_id" value="{{this.id}}">
+					<input type="text" name="message" required="true" placeholder="Your message here">
+					<input type="submit" name="send_msg" value="Send Message">
+				</form>
+			</p>
+		</div>
 	{{/each}}
 </div>
 <!--<script>
 document.addEventListener("DOMContentLoaded", loadButtons);
 
 function loadButtons() {
-	document.getElementById("user-info-btn").addEventListener("click", function(event) {
+	document.getElementById("group_msgs_submit").addEventListener("click", function(event) {
 		var req = new XMLHttpRequest();
 		req.open("GET", "/api?q=user", true);
 		req.addEventListener("load",function() {
