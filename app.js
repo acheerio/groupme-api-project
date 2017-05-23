@@ -8,7 +8,11 @@ var bodyParser = require('body-parser');
 var app = express();
 
 // express-session
-var SESSION_SECRET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const SESSION_SECRET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+const MAX_MSGS = 20;
+const IMG_SIZE = "avatar"; // options (small to large): avatar, preview, large
+
 app.use(session({ 
 	secret: SESSION_SECRET,
 	resave: false,
@@ -22,8 +26,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.set('port', process.env.PORT || 3000);
-
-var IMG_SIZE = "avatar"; // options (small to large): avatar, preview, large
 
 app.get('/', function(req, res){
 	res.render("home");
@@ -110,6 +112,14 @@ app.get('/2', function(req, res){
 	}
 });
 
+// random string generation adapted from https://stackoverflow.com/questions/10726909/random-alpha-numeric-string-in-javascript
+function randomString(length) {
+	var result = '';
+	var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+	return result;
+}
+
 app.post('/2', function(req, res) {
 	var context = {};
 	var groupIndex = null;
@@ -131,7 +141,6 @@ app.post('/2', function(req, res) {
 		{
 			if (!error && response.statusCode >= 200 && response.statusCode < 400)
 			{
-				// set getMessages to true
 				for (var i = 0; i < req.session.groups.length; i++)
 				{
 					if (req.session.groups[i]["id"] == req.body.group_id)
@@ -141,9 +150,6 @@ app.post('/2', function(req, res) {
 						context.groups[groupIndex]["get_messages"] = true;
 					}
 				}
-				
-				// TESTING
-				console.log("get_messages set to true");
 				
 				var msgArray = [];
 				var rawMsgs = JSON.parse(body).response.messages;
@@ -156,12 +162,6 @@ app.post('/2', function(req, res) {
 						"text": rawMsgs[i]["text"],
 						"timestamp": rawMsgs[i]["created_at"]
 					});
-				}
-				
-				// TESTING - 
-				for (var i = 0; i < msgArray.length; i++)
-				{
-					console.log(msgArray[i]["username"], msgArray[i]["text"]);
 				}
 				
 				// message info
@@ -182,18 +182,71 @@ app.post('/2', function(req, res) {
 	{
 		request.post({
 			url: "https://api.groupme.com/v3/groups/" + req.body.group_id + "/messages?token=" + req.session.apiKey,
-			headers: {"Content-Type": "application/json"
-			body: '{}'}
-			}, function(error, response, body)
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({"message": {"text": req.body.message}})}, function(error, response, body)
 			{
 				if (!error && response.statusCode >= 200 && response.statusCode < 400)
 				{
+					// THIS CODE IS IDENTICAL TO THE GET REQUEST FOR MESSAGES
+					// find array index for group with specified id
+					for (var i = 0; i < req.session.groups.length; i++)
+					{
+						if (req.session.groups[i]["id"] == req.body.group_id)
+						{
+							groupIndex = i;
+							req.session.groups[groupIndex]["get_messages"] = true;
+							context.groups[groupIndex]["get_messages"] = true;
+						}
+					}
+						
+					/*
+					var msgArray = req.session.groups[groupIndex]["messages"] || [];
+					
+					if (!(msgArray.length > 0)) // messages never retrieved before, or none
+					{
+						var rawMsgs = JSON.parse(body).response.messages;
+							
+							// messages are returned in descending order (newest first) so pushing in reverse
+							for (var i = (rawMsgs.length - 1); i >= 0; i--)
+							{
+								msgArray.push({
+									"username": rawMsgs[i]["name"],
+									"text": rawMsgs[i]["text"],
+									"timestamp": rawMsgs[i]["created_at"]
+								});
+							}
+					}
+					*/
+
+					var thisMsg = JSON.parse(body).response.message;
+					
+					if ("messages" in req.session.groups[groupIndex]) // existing messages list, just get rid of top and bottom
+					{
+						if (req.session.groups[groupIndex]["messages"].length >= MAX_MSGS)
+							req.session.groups[groupIndex]["messages"].shift();
+						req.session.groups[groupIndex]["messages"].push({
+							"username": thisMsg["name"],
+							"text": thisMsg["text"],
+							"timestamp": thisMsg["created_at"]});
+					}
+						
+					// message info
+					context.groups[groupIndex]["messages"] = req.session.groups[groupIndex]["messages"];
+				
+					res.render("2_demo", context);
 				}
 				else
 				{
+					res.status(response.statusCode);
 				}
 			}
 		);
+	}
+	
+	else
+	{
+		// TESTING!!
+		console.log("Wait, what just happened?");
 	}
 });
 
