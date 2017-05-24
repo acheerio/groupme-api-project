@@ -3,6 +3,7 @@ var handlebars = require("express-handlebars").create({defaultLayout: "main"});
 var session = require('express-session');
 var request = require('request');
 var bodyParser = require('body-parser');
+var path = require('path');
 
 // express
 var app = express();
@@ -21,6 +22,9 @@ app.use(session({
 // handlebars
 app.engine("handlebars", handlebars.engine);
 app.set("view engine", "handlebars");
+
+app.use(express.static(path.join(__dirname, '/public')));
+// from http://www.fullstacktraining.com/articles/how-to-serve-static-files-with-express
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -112,14 +116,6 @@ app.get('/2', function(req, res){
 	}
 });
 
-// random string generation adapted from https://stackoverflow.com/questions/10726909/random-alpha-numeric-string-in-javascript
-function randomString(length) {
-	var result = '';
-	var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-	for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
-	return result;
-}
-
 app.post('/2', function(req, res) {
 	var context = {};
 	var groupIndex = null;
@@ -135,7 +131,13 @@ app.post('/2', function(req, res) {
 	// group info
 	context.groups = req.session.groups;
 	
-	if (req.body["get_msgs"])
+	if(req.body["disconnect"])
+	{
+        req.session.destroy();
+		res.render("2_login", context);
+	} 
+	
+	else if (req.body["get_msgs"])
 	{
 		request.get({url: "https://api.groupme.com/v3/groups/" + req.body.group_id + "/messages?token=" + req.session.apiKey}, function(error, response, body)
 		{
@@ -178,7 +180,7 @@ app.post('/2', function(req, res) {
 		});
 	}
 	
-	if (req.body["send_msg"])
+	else if (req.body["send_msg"])
 	{
 		request.post({
 			url: "https://api.groupme.com/v3/groups/" + req.body.group_id + "/messages?token=" + req.session.apiKey,
@@ -198,25 +200,6 @@ app.post('/2', function(req, res) {
 							context.groups[groupIndex]["get_messages"] = true;
 						}
 					}
-						
-					/*
-					var msgArray = req.session.groups[groupIndex]["messages"] || [];
-					
-					if (!(msgArray.length > 0)) // messages never retrieved before, or none
-					{
-						var rawMsgs = JSON.parse(body).response.messages;
-							
-							// messages are returned in descending order (newest first) so pushing in reverse
-							for (var i = (rawMsgs.length - 1); i >= 0; i--)
-							{
-								msgArray.push({
-									"username": rawMsgs[i]["name"],
-									"text": rawMsgs[i]["text"],
-									"timestamp": rawMsgs[i]["created_at"]
-								});
-							}
-					}
-					*/
 
 					var thisMsg = JSON.parse(body).response.message;
 					
