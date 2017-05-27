@@ -26,13 +26,17 @@ build/Release
 # Dependency directories
 node_modules
 jspm_packages
-local_docs
 
 # Optional npm cache directory
 .npm
 
 # Optional REPL history
 .node_repl_history
+
+#custom
+local_docs
+public_html
+.htaccess
 
 # =========================
 # Operating System Files

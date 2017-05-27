@@ -1,45 +1,36 @@
 var express = require('express');
 var handlebars = require("express-handlebars").create({defaultLayout: "main"});
-var session = require('express-session');
 var request = require('request');
-var bodyParser = require('body-parser');
 var path = require('path');
+var session = require('express-session');
+var bodyParser = require('body-parser');
+
+// constants
+const SESSION_SECRET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const MAX_MSGS = 20;
+const IMG_SIZE = "preview"; // options (small to large): avatar, preview, large
 
 // express
 var app = express();
 
 // express-session
-const SESSION_SECRET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-const MAX_MSGS = 20;
-const IMG_SIZE = "avatar"; // options (small to large): avatar, preview, large
-
 app.use(session({ 
 	secret: SESSION_SECRET,
 	resave: false,
 	saveUninitialized: true }));
 
+// body-parser
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
 // handlebars
 app.engine("handlebars", handlebars.engine);
 app.set("view engine", "handlebars");
-
 app.use(express.static(path.join(__dirname, '/public')));
-// from http://www.fullstacktraining.com/articles/how-to-serve-static-files-with-express
-
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
 
 app.set('port', process.env.PORT || 3000);
 
 app.get('/', function(req, res){
-	res.render("home");
-});
-
-app.get('/about', function(req, res){
-	res.render("about");
-});
-
-app.get('/2', function(req, res){
 	
 	// get the user's API key from URL
 	req.session.apiKey = req.query.access_token || "";	
@@ -70,7 +61,10 @@ app.get('/2', function(req, res){
 				req.session.lang = userObj.locale;
 				
 				// save to context
-				context.img = req.session.img + "." + IMG_SIZE;
+				if (req.session.img)
+					context.img = req.session.img + "." + IMG_SIZE;
+				else
+					context.img = null;
 				context.name = req.session.name;
 				context.id = req.session.user_id;
 				context.email = req.session.email;
@@ -86,8 +80,12 @@ app.get('/2', function(req, res){
 						var groups = JSON.parse(body).response;
 						for (var i = 0; i < groups.length; i++)
 						{
+							if (groups[i]["image_url"])
+								var myImgURL = groups[i]["image_url"] + "." + IMG_SIZE;
+							else
+								var myImgURL = null;
 							myGroups.push({
-								"img": groups[i]["image_url"] + "." + IMG_SIZE,
+								"img": myImgURL,
 								"name": groups[i]["name"],
 								"id": groups[i]["id"],
 								"privacy": groups[i]["type"],
@@ -100,23 +98,33 @@ app.get('/2', function(req, res){
 						context.groups = req.session.groups;
 						res.render("2_demo", context);
 					}
+					// error requesting group data
 					else
 					{
-						// error
-						res.status(response.statusCode);
+						if (response)
+						{
+							res.status(response.statusCode);
+							console.log(response.statusCode);
+						}
+						next(error);
 					}
 				});
 			}
+			// error requesting user data
 			else
 			{
-				// action if error
-				res.status(response.statusCode);
+				if (response)
+				{
+					res.status(response.statusCode);
+					console.log(response.statusCode);
+				}
+				next(error);
 			}
 		});
 	}
 });
 
-app.post('/2', function(req, res) {
+app.post('/', function(req, res) {
 	var context = {};
 	var groupIndex = null;
 	
@@ -172,10 +180,15 @@ app.post('/2', function(req, res) {
 				
 				res.render("2_demo", context);
 			}
+			// error getting messages
 			else
 			{
-				// error
-				res.status(response.statusCode);
+				if (response)
+				{
+					res.status(response.statusCode);
+					console.log(response.statusCode);
+				}
+				next(error);
 			}
 		});
 	}
@@ -189,7 +202,6 @@ app.post('/2', function(req, res) {
 			{
 				if (!error && response.statusCode >= 200 && response.statusCode < 400)
 				{
-					// THIS CODE IS IDENTICAL TO THE GET REQUEST FOR MESSAGES
 					// find array index for group with specified id
 					for (var i = 0; i < req.session.groups.length; i++)
 					{
@@ -225,47 +237,7 @@ app.post('/2', function(req, res) {
 			}
 		);
 	}
-	
-	else
-	{
-		// TESTING!!
-		console.log("Wait, what just happened?");
-	}
 });
-
-/*
-app.get('/headers', function(req,res){
-	res.set('Content-Type','text/plain');
-	var s = '';
-	for(var name in req.headers) s += name + ': ' + req.headers[name] + '\n';
-	res.send(s);
-});
-*/
-
-/*
-app.get('/api', function(req, res){
-	if (req.body.command === "disconnect")
-	{
-		req.session.destroy();
-	}
-	// need "else error"?
-	
-	if (req.query.q == "user")
-	{	
-		var userObj = null;
-		request.get({url: "https://api.groupme.com/v3/users/me?token=" + req.session.apiKey}, function(error, response, body)
-			{
-				if (!error && response.statusCode >= 200 && response.statusCode < 400)
-				{
-					userObj = JSON.parse(body).response;
-					console.log(userObj); // testing
-				}
-				res.json(userObj);
-				res.status(response.statusCode);
-			}
-		);
-	}
-});*/
 
 // custom 404 page
 app.use(function(req, res){

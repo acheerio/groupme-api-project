@@ -1,9 +1,7 @@
-<h1>You Have Successfully Authenticated Using GroupMe!</h1>
-<!--<p><button type="button" class="btn btn-default" id="user-info-btn">Load User Info</button></p>-->
-<h2>My Profile</h2>
+<h2 class="heading">My Profile</h2>
 <div id="user-info">
-<ul>
-   <img src = {{img}}>
+<ul class="contact">
+   {{#if img}}<img src = {{img}}>{{/if}}
    <li> Name: {{name}}
    <li> ID: {{id}}
    <li> E-mail: {{email}}
@@ -12,19 +10,19 @@
 </ul>
 <p>
    <form method="post">
-		<input type="submit" name="disconnect" value="Disconnect">
+		<input type="submit" class="button submit" name="disconnect" value="Disconnect">
    </form>
 </p>
 
 </div>
-<h2>My Groups</h2>
+<h2 class="heading">My Groups</h2>
 <div id="group-info">
 	{{#each groups}}
 		<div>
 			<p>
-				<ul>
-					<img src = {{img}}>
-					<li> Name: {{name}}
+				<ul class="contact">
+					<h3 class="heading">{{name}}</h3>
+					{{#if img}}<img src = {{img}}>{{/if}}
 					<li> ID: {{id}}
 					<li> Type: {{privacy}}
 					<li> Number of Members: {{num_members}}
@@ -34,7 +32,7 @@
 			<p>
 			<form method="post">
 				<input type="hidden" name="group_id" value="{{id}}">
-				<input type="submit" name="get_msgs" value="Get Recent Messages">
+				<input type="submit" class="button submit" name="get_msgs" value="Get Recent Messages">
 			</form>
 			</p>
 			<!--{{#if get_messages}}-->
@@ -48,47 +46,10 @@
 			<p>
 				<form method="post">
 					<input type="hidden" name="group_id" value="{{id}}">
-					<input type="text" name="message" required="true" placeholder="Your message here">
-					<input type="submit" name="send_msg" value="Send Message">
+					<input type="text" class="text" name="message" required="true" placeholder="Your message here">
+					<input type="submit" class="button submit" name="send_msg" value="Send Message">
 				</form>
 			</p>
 		</div>
 	{{/each}}
 </div>
-<!--<script>
-document.addEventListener("DOMContentLoaded", loadButtons);
-
-function loadButtons() {
-	document.getElementById("group_msgs_submit").addEventListener("click", function(event) {
-		var req = new XMLHttpRequest();
-		req.open("GET", "/api?q=user", true);
-		req.addEventListener("load",function() {
-		if (req.status >= 200 && req.status < 400)
-		{
-			var currDiv = document.getElementById("user-info");
-			if (currDiv.style.display == "none")
-			{
-				var userObj = JSON.parse(req.responseText);
-				var bullet = document.createElement("li");
-				bullet.textContent = "ID: " + userObj.id;
-				currDiv.firstElementChild.appendChild(bullet);
-				bullet = document.createElement("li");
-				bullet.textContent = "Phone: " + userObj.phone_number;
-				currDiv.firstElementChild.appendChild(bullet);
-				bullet = document.createElement("li");
-				bullet.textContent = "Name: " + userObj.name;
-				currDiv.firstElementChild.appendChild(bullet);
-				bullet = document.createElement("li");
-				bullet.textContent = "Email: " + userObj.email;
-				currDiv.firstElementChild.appendChild(bullet);
-				currDiv.style.display = "block";
-			}
-		}
-		else
-		{
-			console.log("Error: " + req.statusText);
-		}});
-		req.send(null);
-		event.preventDefault();	
-	})};
-</script>-->
