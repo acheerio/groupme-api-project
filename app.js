@@ -7,8 +7,8 @@ var bodyParser = require('body-parser');
 
 // constants
 const SESSION_SECRET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const MAX_MSGS = 20;
 const IMG_SIZE = "preview"; // options (small to large): avatar, preview, large
+const MAX_MSGS = 10; // max is 100
 
 // express
 var app = express();
@@ -30,7 +30,7 @@ app.use(express.static(path.join(__dirname, '/public')));
 
 app.set('port', process.env.PORT || 3000);
 
-app.get('/', function(req, res){
+app.get('/', function(req, res, next){
 	
 	// get the user's API key from URL
 	req.session.apiKey = req.query.access_token || "";	
@@ -89,8 +89,7 @@ app.get('/', function(req, res){
 								"name": groups[i]["name"],
 								"id": groups[i]["id"],
 								"privacy": groups[i]["type"],
-								"num_members": groups[i]["members"].length,
-								"get_messages": false
+								"num_members": groups[i]["members"].length
 							});
 						}
 						
@@ -124,7 +123,7 @@ app.get('/', function(req, res){
 	}
 });
 
-app.post('/', function(req, res) {
+app.post('/', function(req, res, next) {
 	var context = {};
 	var groupIndex = null;
 	
@@ -147,7 +146,7 @@ app.post('/', function(req, res) {
 	
 	else if (req.body["get_msgs"])
 	{
-		request.get({url: "https://api.groupme.com/v3/groups/" + req.body.group_id + "/messages?token=" + req.session.apiKey}, function(error, response, body)
+		request.get({url: "https://api.groupme.com/v3/groups/" + req.body.group_id + "/messages?token=" + req.session.apiKey + "&limit=" + MAX_MSGS}, function(error, response, body)
 		{
 			if (!error && response.statusCode >= 200 && response.statusCode < 400)
 			{
@@ -156,8 +155,6 @@ app.post('/', function(req, res) {
 					if (req.session.groups[i]["id"] == req.body.group_id)
 					{
 						groupIndex = i;
-						req.session.groups[groupIndex]["get_messages"] = true;
-						context.groups[groupIndex]["get_messages"] = true;
 					}
 				}
 				
@@ -208,8 +205,6 @@ app.post('/', function(req, res) {
 						if (req.session.groups[i]["id"] == req.body.group_id)
 						{
 							groupIndex = i;
-							req.session.groups[groupIndex]["get_messages"] = true;
-							context.groups[groupIndex]["get_messages"] = true;
 						}
 					}
 

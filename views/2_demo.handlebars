@@ -30,18 +30,16 @@
 			</p>
 			<!-- To get recent messages -->
 			<p>
-			<form method="post">
-				<input type="hidden" name="group_id" value="{{id}}">
-				<input type="submit" class="button submit" name="get_msgs" value="Get Recent Messages">
-			</form>
+				<form method="post">
+					<input type="hidden" name="group_id" value="{{id}}">
+					<input type="submit" class="button submit" name="get_msgs" value="Get Recent Messages">
+				</form>
 			</p>
-			<!--{{#if get_messages}}-->
 			<div>
 				{{#each messages}}
 					<p>{{username}}: {{text}}</p>
 				{{/each}}
 			</div>
-			<!--{{/if}}-->
 			<!-- To post a new message -->
 			<p>
 				<form method="post">
